@@ -6,21 +6,46 @@ var request = require('request');
 var multer = require('multer');
 var app = express();
 var upload = multer();
+var mongoose = require('mongoose')
+
 app.use(express.static('views'));
 app.use(bodyParser.json());
 
 var config = require('./config')
 
+mongoose.connect(config.dburl)
+
+var notificationSchema = mongoose.Schema({
+  timestamp: { type: Date, default: Date.now },
+  game: String,
+  player: String,
+  turn: Number
+});
+var Notification = mongoose.model("Notification", notificationSchema);
+
 app.post('/', upload.array(), function(req, response) {
   console.log(req.body);
-  console.log(req.body.value2);
-  var playerId = config.playerMapping[req.body.value2];
-  var server = config.serverMapping[req.body.value1];
-  var gamename = req.body.value1;
+
+  var game = req.body.value1;
+  var player = req.body.value2;
+  var turnNumber = req.body.value3;
+
+  var playerId = config.playerMapping[player]
+  var server = config.serverMapping[game];
   var mention = '';
 
   console.log(playerId);
-  var turnNumber = req.body.value3;
+
+  // Save in db
+  var newNotification = new Notification({
+    game: game,
+    player: player,
+    turn: turnNumber
+  });
+  newNotification.save()
+
+  // Test rest of the code will forward notification to
+  //   another webhook, e.g. Discord webhook
 
   if (!server) {
     server = config.defaultServer;
@@ -34,7 +59,7 @@ app.post('/', upload.array(), function(req, response) {
 
   if (server) {
     var content = 'Hey ' + mention + ', it\'s time to take your turn #' +
-        turnNumber + ' in \'' + gamename + '\'!';
+        turnNumber + ' in \'' + game + '\'!';
     sendMessage(server, content);
     console.log('Done triggering.');
   } else {
