@@ -8,7 +8,9 @@ var app = express();
 var upload = multer();
 var mongoose = require('mongoose')
 
-app.use(express.static('views'));
+app.set('view engine', 'pug');
+app.set('views', __dirname + '/views');
+
 app.use(bodyParser.json());
 
 var config = require('./config')
@@ -22,6 +24,38 @@ var notificationSchema = mongoose.Schema({
   turn: Number
 });
 var Notification = mongoose.model("Notification", notificationSchema);
+
+function sendMessage(server, content) {
+  request(
+      {uri: server, body: {'content': content}, json: true, method: 'POST'},
+      function(error, response, body) {
+        if (!error && response.statusCode == 200) {
+          console.log(body);
+        } else {
+          console.log(response.statusCode);
+          console.log(body);
+        }
+      });
+}
+
+app.get('/', async(req, res, next) => {
+  games = await Notification.find({}).distinct('game');
+  docs = []
+  console.log(games)
+  for (i = 0; i < games.length; i++) {
+    console.log("game " + games[i])
+    doc = await Notification.findOne({'game': games[i]}).sort({ field: 'asc', _id:-1}).limit(1);
+    console.log("doc " + doc);
+    docs.push(doc)
+  }
+
+  console.log(docs);
+  res.render('main', {
+    'docs': docs,
+  });
+
+  res.render('main');
+});
 
 app.post('/', upload.array(), function(req, response) {
   console.log(req.body);
@@ -71,20 +105,7 @@ app.post('/', upload.array(), function(req, response) {
   response.end();
 });
 
-function sendMessage(server, content) {
-  request(
-      {uri: server, body: {'content': content}, json: true, method: 'POST'},
-      function(error, response, body) {
-        if (!error && response.statusCode == 200) {
-          console.log(body);
-        } else {
-          console.log(response.statusCode);
-          console.log(body);
-        }
-      });
-}
-
-// listen for requests :)
+// listen for requests
 var listener = app.listen(process.env.PORT, function() {
   console.log('Your app is listening on port ' + listener.address().port);
 });

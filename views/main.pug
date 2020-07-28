@@ -1,0 +1,14 @@
+doctype html
+html
+   head
+      title Civalittle
+   body
+      H1 Games in Progress
+      table
+        tr
+          th Game
+          th Waiting on Player
+        each doc in docs
+          tr
+            td #{doc.game}
+            td #{doc.player}
