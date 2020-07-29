@@ -46,20 +46,20 @@ function dateToUnits(date) {
 
   hours = hours-(days*24);
   minutes = minutes-(days*24*60)-(hours*60);
-  seconds = seconds-(days*24*60*60)-(hours*60*60)-(minutes*60);
+  seconds = Math.trunc(seconds-(days*24*60*60)-(hours*60*60)-(minutes*60));
 
   str = ""
   if (days) {
-    str += days + " days ";
+    str += days + (days == 1 ? " day " : " days ");
   }
   if (hours) {
-    str += hours + " hours ";
+    str += hours + (hours == 1 ? " hour " : " hours ");
   }
   if (minutes) {
-    str += minutes + " minutes ";
+    str += minutes + (minutes == 1 ? " minute " : " minutes ");
   }
   if (seconds) {
-    str += Math.trunc(seconds) + " seconds";
+    str += seconds + (seconds == 1 ? " second " : " seconds ");
   }
   return str;
 }
