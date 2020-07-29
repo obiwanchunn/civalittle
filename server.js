@@ -38,20 +38,57 @@ function sendMessage(server, content) {
       });
 }
 
+function dateToUnits(date) {
+  var seconds = Math.floor(date)/1000;
+  var minutes = Math.floor(seconds/60);
+  var hours = Math.floor(minutes/60);
+  var days = Math.floor(hours/24);
+
+  hours = hours-(days*24);
+  minutes = minutes-(days*24*60)-(hours*60);
+  seconds = seconds-(days*24*60*60)-(hours*60*60)-(minutes*60);
+
+  str = ""
+  if (days) {
+    str += days + " days ";
+  }
+  if (hours) {
+    str += hours + " hours ";
+  }
+  if (minutes) {
+    str += minutes + " minutes ";
+  }
+  if (seconds) {
+    str += Math.trunc(seconds) + " seconds";
+  }
+  return str;
+}
+
 app.get('/', async(req, res, next) => {
   games = await Notification.find({}).distinct('game');
-  docs = []
+  currentPlayers = []
+  timeSinceLastMoves = []
   console.log(games)
   for (i = 0; i < games.length; i++) {
     console.log("game " + games[i])
-    doc = await Notification.findOne({'game': games[i]}).sort({ field: 'asc', _id:-1}).limit(1);
-    console.log("doc " + doc);
-    docs.push(doc)
+    data = await Notification.find({'game': games[i]}).sort({timestamp: 'desc', _id:-1});
+    console.log("data " + data);
+
+    // Time since last move
+    //timeSinceLastMoves.push(dateToUnits(res[0].timestamp - res[1].timestamp))
+    now = new Date()
+    timeSinceLastMoves.push(dateToUnits(now.getTime() - data[0].timestamp.getTime()))
+    console.log("time " + timeSinceLastMoves)
+
+    // Current player
+    currentPlayers.push(data[0].player)
+    console.log("player " + currentPlayers)
   }
 
-  console.log(docs);
   res.render('main', {
-    'docs': docs,
+    'games': games,
+    'currentPlayers': currentPlayers,
+    'timeSinceLastMoves': timeSinceLastMoves,
   });
 
   res.render('main');

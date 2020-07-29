@@ -6,9 +6,11 @@ html
       H1 Games in Progress
       table
         tr
-          th Game
-          th Waiting on Player
-        each doc in docs
+          th(align="left") Game
+          th(align="left") Waiting on Player
+          th(align="left") Time Since Last Turn
+        each game, idx in games
           tr
-            td #{doc.game}
-            td #{doc.player}
+            td #{game}
+            td #{currentPlayers[idx]}
+            td #{timeSinceLastMoves[idx]}
