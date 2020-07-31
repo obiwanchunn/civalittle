@@ -3,6 +3,7 @@ html
    head
       title Civalittle
    body
+      include ./header.pug
       H1 Games in Progress
       table
         tr
@@ -11,6 +12,7 @@ html
           th(align="left") Time Since Last Turn
         each game, idx in games
           tr
-            td #{game}
+            td
+              a(href=/games/ + game) #{game}
             td #{currentPlayers[idx]}
             td #{timeSinceLastMoves[idx]}

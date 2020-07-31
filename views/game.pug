@@ -1,0 +1,15 @@
+doctype html
+html
+   head
+      title Civalittle - #{game}
+   body
+      include ./header.pug
+      H1 #{game} Stats
+      table
+        tr
+          th(align="left") Player
+          th(align="left") Average Time Per Turn
+        each player, idx in players
+          tr
+            td #{player}
+            td #{turnTime[player]['avgTimePerTurnString']}

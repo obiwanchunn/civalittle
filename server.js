@@ -75,14 +75,13 @@ app.get('/', async(req, res, next) => {
     console.log("data " + data);
 
     // Time since last move
-    //timeSinceLastMoves.push(dateToUnits(res[0].timestamp - res[1].timestamp))
-    now = new Date()
-    timeSinceLastMoves.push(dateToUnits(now.getTime() - data[0].timestamp.getTime()))
-    console.log("time " + timeSinceLastMoves)
+    now = new Date();
+    timeSinceLastMoves.push(dateToUnits(now.getTime() - data[0].timestamp.getTime()));
+    console.log("time " + timeSinceLastMoves);
 
     // Current player
-    currentPlayers.push(data[0].player)
-    console.log("player " + currentPlayers)
+    currentPlayers.push(data[0].player);
+    console.log("player " + currentPlayers);
   }
 
   res.render('main', {
@@ -90,8 +89,49 @@ app.get('/', async(req, res, next) => {
     'currentPlayers': currentPlayers,
     'timeSinceLastMoves': timeSinceLastMoves,
   });
+});
 
-  res.render('main');
+app.get('/games/:game', async(req, res, next) => {
+  game = req.params.game;
+  games = await Notification.find({'game': game}).distinct('game');
+  console.log(game + " " + games);
+  if (games.length != 1) {
+    res.status(500).send('Mismatch');
+    return;
+  }
+
+  turns = await Notification.find({'game': game}).sort({timestamp: 'desc', _id:-1});
+  console.log(turns);
+  turnTime = {};
+  players = [];
+  for (idx in turns) {
+    turn = turns[idx];
+    if (!turnTime[turn['player']]) {
+      players.push(turn['player']);
+      turnTime[turn['player']] = {}
+      turnTime[turn['player']]['totalTime'] = 0;
+      turnTime[turn['player']]['numTurns'] = 0;
+    }
+    if (idx == 0) {
+      now = new Date();
+      addTime = now.getTime() - turn['timestamp'];
+    } else {
+      addTime = turns[idx - 1]['timestamp'] - turn['timestamp'];
+    }
+    console.log("player " + turn['player'] + " addtime " + addTime);
+    turnTime[turn['player']]['totalTime'] += addTime;
+    turnTime[turn['player']]['numTurns'] += 1;
+    turnTime[turn['player']]['avgTimePerTurn'] = Math.round(turnTime[turn['player']]['totalTime'] / turnTime[turn['player']]['numTurns']);
+    turnTime[turn['player']]['avgTimePerTurnString'] = dateToUnits(turnTime[turn['player']]['avgTimePerTurn']);
+    console.log(turnTime);
+  }
+
+  res.render('game', {
+    'game': game,
+    'players': players.sort(),
+    'turnTime': turnTime,
+  });
+
 });
 
 app.post('/', upload.array(), function(req, response) {
