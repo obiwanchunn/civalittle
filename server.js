@@ -128,7 +128,7 @@ app.get('/games/:game', async(req, res, next) => {
 
   res.render('game', {
     'game': game,
-    'players': players.sort(),
+    'players': players.sort((a,b) => turnTime[b]['avgTimePerTurn'] - turnTime[a]['avgTimePerTurn']),
     'turnTime': turnTime,
   });
 

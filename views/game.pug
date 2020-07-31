@@ -8,8 +8,10 @@ html
       table
         tr
           th(align="left") Player
-          th(align="left") Average Time Per Turn
+          th(align="left") Average Time Per Turn*
         each player, idx in players
           tr
             td #{player}
             td #{turnTime[player]['avgTimePerTurnString']}
+      br()
+      b() *Sorted Descending by Average Time Per Turn
