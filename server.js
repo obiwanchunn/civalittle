@@ -122,14 +122,32 @@ app.get('/games/:game', async(req, res, next) => {
     turnTime[turn['player']]['totalTime'] += addTime;
     turnTime[turn['player']]['numTurns'] += 1;
     turnTime[turn['player']]['avgTimePerTurn'] = Math.round(turnTime[turn['player']]['totalTime'] / turnTime[turn['player']]['numTurns']);
-    turnTime[turn['player']]['avgTimePerTurnString'] = dateToUnits(turnTime[turn['player']]['avgTimePerTurn']);
-    console.log(turnTime);
+    turnTime[turn['player']]['avgTimePerTurnString'] = dateToUnits(turnTime[turn['player']]['avgTimePerTurn']);    console.log(turnTime);
   }
 
-  res.render('game', {
+  maxRound = 250; // Online games default to 250. TODO: support other max turn settings
+  currentRound = turns[0]['turn'];
+  currentPlayer = turns[0]['player'];
+  firstRound = turns[turns.length-1]['turn'];
+  firstRoundTimestamp = turns[turns.length-1]['timestamp'];
+  numTurnsPerRound = players.length;
+  now = new Date();
+  currentTime = now.getTime();
+  totalGameTime = currentTime - firstRoundTimestamp;
+  RoundsPlayed = currentRound - firstRound;
+  averageTimePerRound = RoundsPlayed ? totalGameTime / RoundsPlayed : 0;
+  maxEstimatedTimeLeft = averageTimePerRound * (maxRound - currentRound + 1); // don't current Current round as done
+  maxEstimatedDateComplete = new Date(maxEstimatedTimeLeft + currentTime);
+
+ res.render('game', {
     'game': game,
     'players': players.sort((a,b) => turnTime[b]['avgTimePerTurn'] - turnTime[a]['avgTimePerTurn']),
     'turnTime': turnTime,
+    'currentRound': currentRound,
+    'currentPlayer': currentPlayer,
+    'maxRound': maxRound,
+    'maxEstimatedTimeLeft': dateToUnits(maxEstimatedTimeLeft),
+    'maxEstimatedDateComplete': maxEstimatedDateComplete.toLocaleString("en-US", {timeZone: "America/Chicago"}),
   });
 
 });
@@ -155,7 +173,7 @@ app.post('/', upload.array(), function(req, response) {
   });
   newNotification.save()
 
-  // Test rest of the code will forward notification to
+  // The rest of the code will forward notification to
   //   another webhook, e.g. Discord webhook
 
   if (!server) {

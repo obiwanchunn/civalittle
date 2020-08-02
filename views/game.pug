@@ -15,3 +15,17 @@ html
             td #{turnTime[player]['avgTimePerTurnString']}
       br()
       b() *Sorted Descending by Average Time Per Turn
+      H2 Additional Stats
+      ul
+        li
+          strong Round:
+          |  #{currentRound} of #{maxRound}
+        li
+          strong Waiting on Player:
+          |  #{currentPlayer}
+        li
+          strong Estimated Time Left:
+          |  #{maxEstimatedTimeLeft}
+        li
+          strong Estimated Completion Date:
+          |  #{maxEstimatedDateComplete}
