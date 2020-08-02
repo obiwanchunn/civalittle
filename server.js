@@ -146,6 +146,7 @@ app.get('/games/:game', async(req, res, next) => {
     'currentRound': currentRound,
     'currentPlayer': currentPlayer,
     'maxRound': maxRound,
+    'averageTimePerRound': dateToUnits(averageTimePerRound),
     'maxEstimatedTimeLeft': dateToUnits(maxEstimatedTimeLeft),
     'maxEstimatedDateComplete': maxEstimatedDateComplete.toLocaleString("en-US", {timeZone: "America/Chicago"}),
   });
