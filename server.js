@@ -100,7 +100,7 @@ function genMessage(mention, game, turnNumber) {
     "Turn #{2} in {1} awaits your steady hand, {0}.",
     "Don't be a Chunn and wait forever, {0}. Take turn #{2} in {1}, quickly!",
     "Sunshine on my shoulder makes me happy when {0} takes turn #{2} in {1}.",
-    "Bad news: must social distance. Good news: {1}, it's turn #{2} in {0}.",
+    "Bad news: must social distance. Good news: {0}, it's turn #{2} in {1}.",
     "Knock knock, {0}. Who's there you ask? It's turn #{2} in {1}. Open the door.",
   ];
 
