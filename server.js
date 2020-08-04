@@ -64,6 +64,50 @@ function dateToUnits(date) {
   return str;
 }
 
+// From: https://stackoverflow.com/a/18234317/4914560
+String.prototype.formatUnicorn = String.prototype.formatUnicorn ||
+function () {
+    "use strict";
+    var str = this.toString();
+    if (arguments.length) {
+        var t = typeof arguments[0];
+        var key;
+        var args = ("string" === t || "number" === t) ?
+            Array.prototype.slice.call(arguments)
+            : arguments[0];
+
+        for (key in args) {
+            str = str.replace(new RegExp("\\{" + key + "\\}", "gi"), args[key]);
+        }
+    }
+
+    return str;
+};
+
+function genMessage(mention, game, turnNumber) {
+  messageFormats = [
+    "Hey {0}, it's time to take turn #{2} in {1}!",
+    "{0} It's turn #{2} in {1} and you're up!",
+    "{0} everybody's waiting on you to take turn #{2} in {1}.",
+    "{0}: Turn #{2} in {1}.",
+    "{0}, your mission, should you choose to accept it: Take turn #{2} in {1}.",
+    "One more turn, {0}? It's turn #{2} in {1}.",
+    "You haven't lost in {1} yet, {0}?  It's turn #{2}.",
+    "Game: {1}. Turn: {2}. Player: {0}.",
+    "No time to waste, {0}. Turn #{2} now in {1}!",
+    "Et tu, {0}? Caeser awaits betrayal in {1}, turn #{2}.",
+    "Mars won't colonize itself in {1}, {0}, It's turn #{2}, so get to it!",
+    "Turn #{2} in {1} awaits your steady hand, {0}.",
+    "Don't be a Chunn and wait forever, {0}. Take turn #{2} in {1}, quickly!",
+    "Sunshine on my shoulder makes me happy when {0} takes turn #{2} in {1}.",
+    "Bad news: must social distance. Good news: {1}, it's turn #{2} in {0}.",
+    "Knock knock, {0}. Who's there you ask? It's turn #{2} in {1}. Open the door.",
+  ];
+
+  randomIdx = Math.floor(Math.random() * messageFormats.length);
+  return messageFormats[randomIdx].formatUnicorn('**' + mention + '**', '**' + game + '**', '**' + turnNumber + '**');
+}
+
 app.get('/', async(req, res, next) => {
   games = await Notification.find({}).distinct('game');
   currentPlayers = []
@@ -188,8 +232,7 @@ app.post('/', upload.array(), function(req, response) {
   }
 
   if (server) {
-    var content = 'Hey ' + mention + ', it\'s time to take your turn #' +
-        turnNumber + ' in \'' + game + '\'!';
+    content = genMessage(mention, game, turnNumber);
     sendMessage(server, content);
     console.log('Done triggering.');
   } else {
