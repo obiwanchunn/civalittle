@@ -113,8 +113,7 @@ app.get('/games/:game', async(req, res, next) => {
       turnTime[turn['player']]['numTurns'] = 0;
     }
     if (idx == 0) {
-      now = new Date();
-      addTime = now.getTime() - turn['timestamp'];
+      addTime = (new Date()).getTime() - turn['timestamp'];
     } else {
       addTime = turns[idx - 1]['timestamp'] - turn['timestamp'];
     }
@@ -128,11 +127,11 @@ app.get('/games/:game', async(req, res, next) => {
   maxRound = 250; // Online games default to 250. TODO: support other max turn settings
   currentRound = turns[0]['turn'];
   currentPlayer = turns[0]['player'];
+  timeSinceLastTurn = dateToUnits((new Date()).getTime() - turns[0]['timestamp']);
   firstRound = turns[turns.length-1]['turn'];
   firstRoundTimestamp = turns[turns.length-1]['timestamp'];
   numTurnsPerRound = players.length;
-  now = new Date();
-  currentTime = now.getTime();
+  currentTime = (new Date()).getTime();
   totalGameTime = currentTime - firstRoundTimestamp;
   RoundsPlayed = currentRound - firstRound;
   averageTimePerRound = RoundsPlayed ? totalGameTime / RoundsPlayed : 0;
@@ -145,6 +144,7 @@ app.get('/games/:game', async(req, res, next) => {
     'turnTime': turnTime,
     'currentRound': currentRound,
     'currentPlayer': currentPlayer,
+    'timeSinceLastTurn': timeSinceLastTurn,
     'maxRound': maxRound,
     'averageTimePerRound': dateToUnits(averageTimePerRound),
     'maxEstimatedTimeLeft': dateToUnits(maxEstimatedTimeLeft),
