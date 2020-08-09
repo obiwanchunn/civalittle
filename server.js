@@ -8,6 +8,8 @@ var app = express();
 var upload = multer();
 var mongoose = require('mongoose')
 
+var debug = false;
+
 app.set('view engine', 'pug');
 app.set('views', __dirname + '/views');
 
@@ -112,20 +114,20 @@ app.get('/', async(req, res, next) => {
   games = await Notification.find({}).distinct('game');
   currentPlayers = []
   timeSinceLastMoves = []
-  console.log(games)
+  if (debug) console.log(games)
   for (i = 0; i < games.length; i++) {
-    console.log("game " + games[i])
+    if (debug) console.log("game " + games[i])
     data = await Notification.find({'game': games[i]}).sort({timestamp: 'desc', _id:-1});
-    console.log("data " + data);
+    if (debug) console.log("data " + data);
 
     // Time since last move
     now = new Date();
     timeSinceLastMoves.push(dateToUnits(now.getTime() - data[0].timestamp.getTime()));
-    console.log("time " + timeSinceLastMoves);
+    if (debug) console.log("time " + timeSinceLastMoves);
 
     // Current player
     currentPlayers.push(data[0].player);
-    console.log("player " + currentPlayers);
+    if (debug) console.log("player " + currentPlayers);
   }
 
   res.render('main', {
@@ -138,14 +140,14 @@ app.get('/', async(req, res, next) => {
 app.get('/games/:game', async(req, res, next) => {
   game = req.params.game;
   games = await Notification.find({'game': game}).distinct('game');
-  console.log(game + " " + games);
+  if (debug) console.log(game + " " + games);
   if (games.length != 1) {
     res.status(500).send('Mismatch');
     return;
   }
 
   turns = await Notification.find({'game': game}).sort({timestamp: 'desc', _id:-1});
-  console.log(turns);
+  if (debug) console.log(turns);
   turnTime = {};
   players = [];
   for (idx in turns) {
@@ -161,11 +163,12 @@ app.get('/games/:game', async(req, res, next) => {
     } else {
       addTime = turns[idx - 1]['timestamp'] - turn['timestamp'];
     }
-    console.log("player " + turn['player'] + " addtime " + addTime);
+    if (debug) console.log("player " + turn['player'] + " addtime " + addTime);
     turnTime[turn['player']]['totalTime'] += addTime;
     turnTime[turn['player']]['numTurns'] += 1;
     turnTime[turn['player']]['avgTimePerTurn'] = Math.round(turnTime[turn['player']]['totalTime'] / turnTime[turn['player']]['numTurns']);
-    turnTime[turn['player']]['avgTimePerTurnString'] = dateToUnits(turnTime[turn['player']]['avgTimePerTurn']);    console.log(turnTime);
+    turnTime[turn['player']]['avgTimePerTurnString'] = dateToUnits(turnTime[turn['player']]['avgTimePerTurn']);
+    if (debug) console.log(turnTime);
   }
 
   maxRound = 250; // Online games default to 250. TODO: support other max turn settings
