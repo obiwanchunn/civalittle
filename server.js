@@ -86,68 +86,17 @@ function () {
     return str;
 };
 
-function genMessage(mention, game, turnNumber) {
-  messageFormats = [
-    "Hey {0}, it's time to take turn #{2} in {1}!",
-    "{0} It's turn #{2} in {1} and you're up!",
-    "{0} everybody's waiting on you to take turn #{2} in {1}.",
-    "{0}: Turn #{2} in {1}.",
-    "{0}, your mission, should you choose to accept it: Take turn #{2} in {1}.",
-    "One more turn, {0}? It's turn #{2} in {1}.",
-    "You haven't lost in {1} yet, {0}?  It's turn #{2}.",
-    "Game: {1}. Turn: {2}. Player: {0}.",
-    "No time to waste, {0}. Turn #{2} now in {1}!",
-    "Et tu, {0}? Caeser awaits betrayal in {1}, turn #{2}.",
-    "Mars won't colonize itself in {1}, {0}, It's turn #{2}, so get to it!",
-    "Turn #{2} in {1} awaits your steady hand, {0}.",
-    "Don't be a Chunn and wait forever, {0}. Take turn #{2} in {1}, quickly!",
-    "Sunshine on my shoulder makes me happy when {0} takes turn #{2} in {1}.",
-    "Bad news: must social distance. Good news: {0}, it's turn #{2} in {1}.",
-    "Knock knock, {0}. Who's there you ask? It's turn #{2} in {1}. Open the door.",
-  ];
-
-  randomIdx = Math.floor(Math.random() * messageFormats.length);
-  return messageFormats[randomIdx].formatUnicorn('**' + mention + '**', '**' + game + '**', '**' + turnNumber + '**');
-}
-
-app.get('/', async(req, res, next) => {
-  games = await Notification.find({}).distinct('game');
-  currentPlayers = []
-  timeSinceLastMoves = []
-  if (debug) console.log(games)
-  for (i = 0; i < games.length; i++) {
-    if (debug) console.log("game " + games[i])
-    data = await Notification.find({'game': games[i]}).sort({timestamp: 'desc', _id:-1});
-    if (debug) console.log("data " + data);
-
-    // Time since last move
-    now = new Date();
-    timeSinceLastMoves.push(dateToUnits(now.getTime() - data[0].timestamp.getTime()));
-    if (debug) console.log("time " + timeSinceLastMoves);
-
-    // Current player
-    currentPlayers.push(data[0].player);
-    if (debug) console.log("player " + currentPlayers);
-  }
-
-  res.render('main', {
-    'games': games,
-    'currentPlayers': currentPlayers,
-    'timeSinceLastMoves': timeSinceLastMoves,
-  });
-});
-
-app.get('/games/:game', async(req, res, next) => {
-  game = req.params.game;
+async function dbGameAnalysis(game) {
+  res = {}
   games = await Notification.find({'game': game}).distinct('game');
   if (debug) console.log(game + " " + games);
   if (games.length != 1) {
-    res.status(500).send('Mismatch');
-    return;
+    return res;
   }
 
   turns = await Notification.find({'game': game}).sort({timestamp: 'desc', _id:-1});
   if (debug) console.log(turns);
+
   turnTime = {};
   players = [];
   for (idx in turns) {
@@ -185,22 +134,87 @@ app.get('/games/:game', async(req, res, next) => {
   maxEstimatedTimeLeft = averageTimePerRound * (maxRound - currentRound + 1); // don't current Current round as done
   maxEstimatedDateComplete = new Date(maxEstimatedTimeLeft + currentTime);
 
- res.render('game', {
-    'game': game,
-    'players': players.sort((a,b) => turnTime[b]['avgTimePerTurn'] - turnTime[a]['avgTimePerTurn']),
-    'turnTime': turnTime,
-    'currentRound': currentRound,
-    'currentPlayer': currentPlayer,
-    'timeSinceLastTurn': timeSinceLastTurn,
-    'maxRound': maxRound,
-    'averageTimePerRound': dateToUnits(averageTimePerRound),
-    'maxEstimatedTimeLeft': dateToUnits(maxEstimatedTimeLeft),
-    'maxEstimatedDateComplete': maxEstimatedDateComplete.toLocaleString("en-US", {timeZone: "America/Chicago"}),
-  });
+  res['game'] = game;
+  res['players'] = players.sort((a,b) => turnTime[b]['avgTimePerTurn'] - turnTime[a]['avgTimePerTurn']);
+  res['turnTime'] = turnTime;
+  res['currentRound'] = currentRound;
+  res['currentPlayer'] = currentPlayer;
+  res['timeSinceLastTurn'] = timeSinceLastTurn;
+  res['maxRound'] = maxRound;
+  res['averageTimePerRound'] = dateToUnits(averageTimePerRound);
+  res['maxEstimatedTimeLeft'] = dateToUnits(maxEstimatedTimeLeft);
+  res['maxEstimatedDateComplete'] = maxEstimatedDateComplete.toLocaleString("en-US", {timeZone: "America/Chicago"});
 
+  return res;
+}
+
+function genMessage(mention, game, turnNumber, playerSlowest) {
+  messageFormats = [
+    "Hey {0}, it's time to take turn #{2} in {1}!",
+  ];
+
+  // Override default messageFormats with user specified ones if specified
+  if (config.messageFormats)
+    messageFormats = config.messageFormats;
+
+  randomIdx = Math.floor(Math.random() * messageFormats.length);
+  return messageFormats[randomIdx].formatUnicorn('**' + mention + '**', '**' + game + '**', '**' + turnNumber + '**', '**' + playerSlowest + '**');
+}
+
+app.get('/', async(req, res, next) => {
+  games = await Notification.find({}).distinct('game');
+  currentPlayers = []
+  timeSinceLastMoves = []
+  if (debug) console.log(games)
+  for (i = 0; i < games.length; i++) {
+    if (debug) console.log("game " + games[i])
+    data = await Notification.find({'game': games[i]}).sort({timestamp: 'desc', _id:-1});
+    if (debug) console.log("data " + data);
+
+    // Time since last move
+    now = new Date();
+    timeSinceLastMoves.push(dateToUnits(now.getTime() - data[0].timestamp.getTime()));
+    if (debug) console.log("time " + timeSinceLastMoves);
+
+    // Current player
+    currentPlayers.push(data[0].player);
+    if (debug) console.log("player " + currentPlayers);
+  }
+
+  res.render('main', {
+    'games': games,
+    'currentPlayers': currentPlayers,
+    'timeSinceLastMoves': timeSinceLastMoves,
+  });
 });
 
-app.post('/', upload.array(), function(req, response) {
+app.get('/games/:game', async(req, res, next) => {
+  game = req.params.game;
+
+  analysis = await dbGameAnalysis(game);
+  if (!analysis['game']) {
+    res.status(500).send('Mismatch');
+    return;
+  }
+
+ res.render('game', {
+    'game': analysis['game'],
+    'players': analysis['players'],
+    'turnTime': analysis['turnTime'],
+    'currentRound': analysis['currentRound'],
+    'currentPlayer': analysis['currentPlayer'],
+    'timeSinceLastTurn': analysis['timeSinceLastTurn'],
+    'maxRound': analysis['maxRound'],
+    'averageTimePerRound': analysis['averageTimePerRound'],
+    'maxEstimatedTimeLeft': analysis['maxEstimatedTimeLeft'],
+    'maxEstimatedDateComplete': analysis['maxEstimatedDateComplete'],
+  });
+});
+
+app.post('/', upload.array(), async(req, response) => {
+  // We got the message. No need for Ack'ing Civ client after doing work.
+  response.end();
+
   console.log(req.body);
 
   var game = req.body.value1;
@@ -221,6 +235,17 @@ app.post('/', upload.array(), function(req, response) {
   });
   newNotification.save()
 
+  // Flavor for notifications: find slowest person
+  analysis = await dbGameAnalysis(game);
+  playerSlowest = analysis['players'][0];
+  playerSlowestId = config.playerMapping[playerSlowest];
+  if (playerSlowest == player) {
+    playerSlowest = "you";
+  } else if (playerSlowestId) { // Mention the slowest player as well. (Penalty? Or should I take this out? :) )
+    playerSlowest = '<@' + playerSlowestId + '>';
+  }
+
+
   // The rest of the code will forward notification to
   //   another webhook, e.g. Discord webhook
 
@@ -235,7 +260,7 @@ app.post('/', upload.array(), function(req, response) {
   }
 
   if (server) {
-    content = genMessage(mention, game, turnNumber);
+    content = genMessage(mention, game, turnNumber, playerSlowest);
     sendMessage(server, content);
     console.log('Done triggering.');
   } else {
@@ -244,7 +269,6 @@ app.post('/', upload.array(), function(req, response) {
     console.log(content);
   }
 
-  response.end();
 });
 
 // listen for requests
