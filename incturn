@@ -1,0 +1,47 @@
+#!/bin/bash
+#
+# Example game file with the game name as the file name:
+# # Comments
+# adam
+# jake
+# coy
+# 1 adam
+# :
+# each turn taken with <#> <name>
+
+echo 'gamename is ' $1 >&2
+
+skiplinecount=`grep -Ec '^#' $1`
+turnlinecount=`grep -Ec '^[0-9]' $1`
+playerscount=`grep -Ec '^[a-zA-Z]' $1`
+
+echo 'skip line count is ' $skiplinecount >&2
+echo 'turn line count is ' $turnlinecount >&2
+echo 'players   count is ' $playerscount >&2
+
+# parse the game file
+readarray -n $playerscount -s $skiplinecount -t players < $1
+echo 'players ' ${players[*]} >&2
+read -a lastturn <<< `tail -1 $1`
+echo 'last turn' ${lastturn[0]} 'taken by' ${lastturn[1]} >&2
+for ii in "${!players[@]}"; do
+   if [[ "${players[$ii]}" = "${lastturn[1]}" ]]; then
+       break;
+   fi
+done
+
+# create the next turn
+echo 'index' $ii >&2
+nextii=`expr $ii + 1`
+echo 'nextindex' $nextii >&2
+if [[ $nextii == $playerscount ]]; then
+	nextturn[0]=`expr ${lastturn[0]} + 1`;
+	nextturn[1]=${players[0]};
+else
+	nextturn[0]=${lastturn[0]};
+	nextturn[1]=${players[$nextii]};
+fi
+
+echo 'next turn' ${nextturn[0]} 'taken by' ${nextturn[1]} >&2
+echo ${nextturn[0]} ${nextturn[1]} >> $1
+echo '{"value1":"'$1'","value2":"'${nextturn[1]}'","value3":"'${nextturn[0]}'"}'
